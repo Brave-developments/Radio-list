@@ -1,34 +1,37 @@
+# Radio-List for FiveM
 
-    Radio-List for FiveM
+The Radio-List is a specialized FiveM resource created for servers using QBCore and ESX frameworks. It introduces an immersive and dynamic radio channel list that players can interact with, allowing them to see who is currently on the same radio channel in-game, enhancing the role-playing experience.
 
-    Overview:
-    Radio-List is a Lua script designed for FiveM RP servers, enhancing in-game communication by introducing a dynamic radio channel list. Compatible with ESX and QB-Core frameworks, it integrates players' RP or game names into radio communications.
+Preview and Installation [YouTube Link](https://youtu.be/YOUR_LINK_HERE)
+Team Discord [Join Here](https://discord.gg/YOUR_DISCORD_LINK)
 
-    Key Features:
-    - Dynamic updating of players in radio channels.
-    - Compatibility with ESX and QB-Core for RP names.
-    - Customizable settings for RP name usage and UI visibility.
-    - Player-controlled UI for visibility and name customization.
+## Features
 
-    Installation Guide:
-    1. Download the latest version of Radio-List.
-    2. Extract the package into your `resources` directory.
-    3. Configure the script via `config.lua`.
-    4. Add `ensure radio-list` to your server.cfg.
-    5. Restart your FiveM server.
+- **Dynamic Player List**: View all players currently connected to the same radio channel.
+- **Framework Compatibility**: Supports ESX and QBCore frameworks to retrieve and display players' RP names.
+- **Immersive Role-Play**: Allows players to use their RP names for in-game communication.
+- **UI Customization**: Players can customize the visibility and appearance of the radio list UI.
 
-    Configuration Options:
-    - UseRPName: Use RP names or game names.
-    - LetPlayersChangeVisibilityOfRadioList: Allow UI visibility toggle.
-    - RadioListVisibilityCommand: Command to toggle UI visibility.
-    - LetPlayersSetTheirOwnNameInRadio: Enable name customization.
+## Installation
 
-    Usage:
-    Players will see an updated radio channel list with participant names. Commands for interaction are specified in `config.lua`.
+1. **Download the Resource**: Clone this repository or download the ZIP file and extract it into your server's `resources` folder.
+   
+2. **Configure the Server**: Add `ensure radio-list` after `ensure qb-core` and any dependencies in your `server.cfg`.
 
-    Support:
-    For support, submit an issue on GitHub or contact the development team.
+3. **Restart the Server**: Ensure that you restart your FiveM server to apply the changes.
 
-    License:
-    Radio-List is released under the MIT License. See LICENSE file for details.
-]]
+## Configuration
+
+After installation, configure the Radio-List by editing the `config.lua` file:
+
+- `UseRPName`: Set to `true` to use RP names from your server's framework.
+- `LetPlayersChangeVisibilityOfRadioList`: Allows players to toggle the UI on or off.
+- `RadioListVisibilityCommand`: The command players can use to change the radio list's visibility.
+
+## Support
+
+For support, join our Discord or create an issue on the GitHub repository. Our team is always ready to assist you.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE) file for details.

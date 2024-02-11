@@ -1,5 +1,6 @@
 Radio-List for FiveM
-Overview
+
+
 Radio-List is an innovative Lua script tailored for FiveM role-playing (RP) servers, designed to elevate in-game communication. By introducing a dynamic and interactive radio channel list, this script showcases the names of players engaged in radio communication, providing a realistic and immersive RP experience. Compatible with both ESX and QB-Core frameworks, Radio-List bridges the gap between gameplay and storytelling by integrating players' role-play or in-game names into radio interactions.
 
 Key Features

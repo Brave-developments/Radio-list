@@ -1,146 +1,113 @@
 local PMA = exports['pma-voice']
-local Framework = nil
-local Core = nil
-
-if Config.UseRPName then
-	if GetResourceState('es_extended') ~= 'missing' then
-		Framework = 'ESX'
-		Core = exports['es_extended']:getSharedObject()
-	elseif GetResourceState('qb-core') ~= 'missing' then
-		Framework = 'QB'
-		Core = exports['qb-core']:GetCoreObject()
-	elseif GetResourceState('JLRP-Framework') ~= 'missing' then
-		Framework = 'JLRP'
-		Core = exports['JLRP-Framework']:getSharedObject()
-	end
-end
-
 local CustomNames = {}
-local PlayersInCurrentRadioChannel = {}
 local CurrentResourceName = GetCurrentResourceName()
 
+-- When someone disconnects, clear them from the radio list and optionally reset their custom name
 AddEventHandler("playerDropped", function()
-	local src = source
-	
-	local currentRadioChannel = Player(src).state.currentRadioChannel
-	
-	local playersInCurrentRadioChannel = CreateFullRadioListOfChannel(currentRadioChannel)
-	for _, player in pairs(playersInCurrentRadioChannel) do
-		--if player.Source ~= src then
-			TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", player.Source, src, 0, playersInCurrentRadioChannel)
-		--end
-	end
-	playersInCurrentRadioChannel = {}
-	
-	if Config.LetPlayersSetTheirOwnNameInRadio and Config.ResetPlayersCustomizedNameOnExit then
-		local playerIdentifier = GetIdentifier(src)
-		if CustomNames[playerIdentifier] and CustomNames[playerIdentifier] ~= nil then
-			CustomNames[playerIdentifier] = nil
-		end
-	end
+    local src = source
+    local channel = Player(src).state.currentRadioChannel or 0
+
+    -- notify everyone on that channel that src left
+    local list = buildRadioList(channel)
+    for _, p in pairs(list) do
+        TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", p.Source, src, 0, list)
+    end
+
+    if Config.LetPlayersSetTheirOwnNameInRadio and Config.ResetPlayersCustomizedNameOnExit then
+        CustomNames[getIdentifier(src)] = nil
+    end
 end)
 
---This event is located on pma-voice/server/module/radio.lua
-RegisterNetEvent('pma-voice:setPlayerRadio')	
-AddEventHandler('pma-voice:setPlayerRadio', function(channelToJoin)
-	local src = source
-	local radioChannelToJoin = tonumber(channelToJoin)
-	if not radioChannelToJoin then print(('radioChannelToJoin was not a number. Got: %s Expected: Number'):format(type(channelToJoin))) return end
-	local currentRadioChannel = Player(src).state.currentRadioChannel or 0
-	Player(src).state:set('currentRadioChannel', radioChannelToJoin, false)
-	if radioChannelToJoin == 0 then
-		Disconnect(src, currentRadioChannel)
-	else
-		Connect(src, currentRadioChannel, radioChannelToJoin)
-	end
+-- Hook PMA-voice’s radio-set event
+RegisterNetEvent('pma-voice:setPlayerRadio')
+AddEventHandler('pma-voice:setPlayerRadio', function(chStr)
+    local src = source
+    local newCh = tonumber(chStr)
+    if not newCh then
+        print(("radioChannelToJoin wasn’t a number, got %s"):format(type(chStr)))
+        return
+    end
+
+    local oldCh = Player(src).state.currentRadioChannel or 0
+    Player(src).state:set('currentRadioChannel', newCh, false)
+
+    if oldCh > 0 then
+        disconnect(src, oldCh)
+    end
+    if newCh > 0 then
+        connect(src, oldCh, newCh)
+    end
 end)
 
-function Connect(src, currentRadioChannel, radioChannelToJoin)
-	if currentRadioChannel > 0 then -- check if src is already in a radioChannel
-		Disconnect(src, currentRadioChannel)
-	end
-	Wait(1000) -- Wait for pma-voice to finilize setting the player radio channel
+function connect(src, oldCh, newCh)
+    -- give PMA a moment
+    Wait(1000)
 
-	local playersInCurrentRadioChannel = CreateFullRadioListOfChannel(radioChannelToJoin)
-	for _, player in pairs(playersInCurrentRadioChannel) do
-		TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", player.Source, src, radioChannelToJoin, playersInCurrentRadioChannel)
-	end
-	playersInCurrentRadioChannel = {}
+    local list = buildRadioList(newCh)
+    for _, p in pairs(list) do
+        TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", p.Source, src, newCh, list)
+    end
 end
 
-function Disconnect(src, currentRadioChannel) 
-	local playersInCurrentRadioChannel = CreateFullRadioListOfChannel(currentRadioChannel)
-	TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", src, src, 0, playersInCurrentRadioChannel)
-	for _, player in pairs(playersInCurrentRadioChannel) do
-		TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", player.Source, src, 0, playersInCurrentRadioChannel)
-	end
-	playersInCurrentRadioChannel = {}
+function disconnect(src, ch)
+    local list = buildRadioList(ch)
+
+    -- tell src they’re off radio
+    TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", src, src, 0, list)
+
+    -- tell everyone else on that channel
+    for _, p in pairs(list) do
+        TriggerClientEvent("Brave-RadioList:Client:SyncRadioChannelPlayers", p.Source, src, 0, list)
+    end
 end
 
-function CreateFullRadioListOfChannel(RadioChannel)
-	local playersInRadio = PMA:getPlayersInRadioChannel(RadioChannel)
-	for player, isTalking in pairs(playersInRadio) do
-		playersInRadio[player] = {}
-		playersInRadio[player].Source = player		
-		playersInRadio[player].Name = GetPlayerNameForRadio(player)
-	end
-	
-	return playersInRadio
+-- build a table of { Source = playerId, Name = displayName }
+function buildRadioList(channel)
+    local raw = PMA:getPlayersInRadioChannel(channel)
+    for pid in pairs(raw) do
+        raw[pid] = {
+            Source = pid,
+            Name   = getDisplayName(pid)
+        }
+    end
+    return raw
 end
 
-function GetPlayerNameForRadio(source)
-	if Config.LetPlayersSetTheirOwnNameInRadio then
-		local playerIdentifier = GetIdentifier(source)
-		if CustomNames[playerIdentifier] and CustomNames[playerIdentifier] ~= nil then
-			return CustomNames[playerIdentifier]
-		end
-	end
-	
-	if Config.UseRPName then	
-		local name = nil
-		if Framework == 'ESX' then
-			local xPlayer = Core.GetPlayerFromId(source)		
-			if xPlayer then
-				name = xPlayer.getName()
-			end
-		elseif Framework == 'QB' then
-			local xPlayer = Core.Functions.GetPlayer(source)
-			if xPlayer then
-				name = xPlayer.PlayerData.charinfo.firstname..' '..xPlayer.PlayerData.charinfo.lastname 
-			end
-		end	
-		if name == nil then --extra check to make sure player sends a name to client
-			name = GetPlayerName(source)
-		end
-		return name
-	else
-		return GetPlayerName(source)
-	end
+-- use custom name if set, otherwise GetPlayerName()
+function getDisplayName(pid)
+    if Config.LetPlayersSetTheirOwnNameInRadio then
+        local id = getIdentifier(pid)
+        if CustomNames[id] then
+            return CustomNames[id]
+        end
+    end
+    return GetPlayerName(pid)
 end
 
+-- command to let players rename themselves on the fly
 if Config.LetPlayersSetTheirOwnNameInRadio then
-	local commandLength = string.len(Config.RadioListChangeNameCommand)
-	local argumentStartIndex = commandLength + 2
-	RegisterCommand(Config.RadioListChangeNameCommand, function(source, args, rawCommand)
-		local _source = source
-		if _source > 0 then
-			local customizedName = rawCommand:sub(argumentStartIndex)
-			if customizedName ~= "" and customizedName ~= " " and customizedName ~= nil then
-				CustomNames[GetIdentifier(_source)] = customizedName			
-				local currentRadioChannel = Player(_source).state.radioChannel
-				if currentRadioChannel > 0 then
-					Connect(_source, currentRadioChannel, currentRadioChannel)
-				end				
-			end
-		end
-	end)
+    local cmdLen = #Config.RadioListChangeNameCommand
+    local argStart = cmdLen + 2
+
+    RegisterCommand(Config.RadioListChangeNameCommand, function(src, args, raw)
+        local name = raw:sub(argStart)
+        if src > 0 and name:match("%S") then
+            CustomNames[getIdentifier(src)] = name
+            -- refresh their current channel
+            local ch = Player(src).state.currentRadioChannel or 0
+            if ch > 0 then
+                connect(src, ch, ch)
+            end
+        end
+    end)
 end
 
-function GetIdentifier(source)
-	for _, v in ipairs(GetPlayerIdentifiers(source)) do
-		if string.match(v, 'license:') then
-			local identifier = string.gsub(v, 'license:', '')
-			return identifier
-		end
-	end
+-- grab the player’s license identifier (fallback to playerid if none)
+function getIdentifier(pid)
+    for _, v in ipairs(GetPlayerIdentifiers(pid)) do
+        if v:find("license:") then
+            return v:gsub("license:", "")
+        end
+    end
+    return tostring(pid)
 end

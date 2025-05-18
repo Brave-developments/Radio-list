@@ -26,7 +26,10 @@ AddEventHandler('Brave-RadioList:Client:SyncRadioChannelPlayers', function(src, 
 				HideTheRadioList() -- Hide and close the radio list in case the player was already in a different radioChannel
 				for index, player in pairs(PlayersInRadio) do
 					if player.Source ~= src then
-						SendNUIMessage({ radioId = player.Source, radioName = player.Name, channel = RadioChannelsName[radioChannelToJoin] }) -- Add other radio members of the radio channel
+						local radioChannelToJoin = string.format("%.2f", RadioChannelToJoin)
+local channelName = RadioChannelsName[radioChannelToJoin] or ("Channel " .. radioChannelToJoin)
+SendNUIMessage({ radioId = player.Source, radioName = player.Name, channel = channelName })
+ -- Add other radio members of the radio channel
 					else
 						SendNUIMessage({ radioId = src, radioName = player.Name, channel = RadioChannelsName[radioChannelToJoin], self = true  }) -- Add self player to radio list
 					end

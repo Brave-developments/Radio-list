@@ -25,14 +25,10 @@ AddEventHandler('Brave-RadioList:Client:SyncRadioChannelPlayers', function(src, 
 
 			if RadioChannelsName[radioChannelToJoin] and RadioChannelsName[radioChannelToJoin] ~= nil then -- Check if the current radioChannel had defined a name in config or not
 				HideTheRadioList() -- Hide and close the radio list in case the player was already in a different radioChannel
+				local channelName = RadioChannelsName[radioChannelToJoin] or ("Channel " .. radioChannelToJoin)
 				for index, player in pairs(PlayersInRadio) do
 					if player.Source ~= src then
-					local radioChannelToJoin = string.format("%.2f", RadioChannelToJoin)
-
-local channelName = RadioChannelsName[radioChannelToJoin] or ("Channel " .. radioChannelToJoin)
-
-SendNUIMessage({ radioId = player.Source, radioName = player.Name, channel = channelName })
- -- Add other radio members of the radio channel
+						SendNUIMessage({ radioId = player.Source, radioName = player.Name, channel = channelName }) -- Add other radio members of the radio channel
 					else
 						SendNUIMessage({ radioId = src, radioName = player.Name, channel = RadioChannelsName[radioChannelToJoin], self = true  }) -- Add self player to radio list
 					end
@@ -59,10 +55,11 @@ SendNUIMessage({ radioId = player.Source, radioName = player.Name, channel = cha
 		local radioChannelToJoin = string.format("%.2f", RadioChannelToJoin)
 
 			if RadioChannelsName[radioChannelToJoin] and RadioChannelsName[radioChannelToJoin] ~= nil then -- Check if the current radioChannel had defined a name in config or not
-				SendNUIMessage({ radioId = src, radioName = PlayersInRadio[src].Name, channel = RadioChannelsName[radioChannelToJoin] }) -- Add player to radio list
+				local joiningName = PlayersInRadio[src] and PlayersInRadio[src].Name or GetPlayerName(GetPlayerFromServerId(src)) or 'Unknown' -- src is a server id, may not be a key of PlayersInRadio
+				SendNUIMessage({ radioId = src, radioName = joiningName, channel = RadioChannelsName[radioChannelToJoin] }) -- Add player to radio list
 				ResetTheRadioList() -- Delete the PlayersInRadio contents so it opens up memory
 			else
-				SendNUIMessage({ radioId = src, radioName = PlayersInRadio[src].Name, channel = radioChannelToJoin }) -- Add player to radio list
+				SendNUIMessage({ radioId = src, radioName = joiningName, channel = radioChannelToJoin }) -- Add player to radio list
 			end
 		else
 			SendNUIMessage({ radioId = src }) -- Remove player from radio list

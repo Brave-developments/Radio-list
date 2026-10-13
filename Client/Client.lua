@@ -53,9 +53,14 @@ AddEventHandler('Brave-RadioList:Client:SyncRadioChannelPlayers', function(src, 
 	elseif src ~= PlayerServerID then
 		if RadioChannelToJoin > 0 then
 		local radioChannelToJoin = string.format("%.2f", RadioChannelToJoin)
+		-- Compute before the branch so both named and unnamed channels have a name.
+		local joiningName = GetPlayerName(GetPlayerFromServerId(src)) or 'Unknown'
+		for _, player in pairs(PlayersInRadio) do
+			if player.Source == src then joiningName = player.Name or joiningName; break end
+		end
 
 			if RadioChannelsName[radioChannelToJoin] and RadioChannelsName[radioChannelToJoin] ~= nil then -- Check if the current radioChannel had defined a name in config or not
-				local joiningName = PlayersInRadio[src] and PlayersInRadio[src].Name or GetPlayerName(GetPlayerFromServerId(src)) or 'Unknown' -- src is a server id, may not be a key of PlayersInRadio
+				-- joiningName is computed above and works for named or numeric channels
 				SendNUIMessage({ radioId = src, radioName = joiningName, channel = RadioChannelsName[radioChannelToJoin] }) -- Add player to radio list
 				ResetTheRadioList() -- Delete the PlayersInRadio contents so it opens up memory
 			else
